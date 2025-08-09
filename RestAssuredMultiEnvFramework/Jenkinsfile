@@ -1,28 +1,58 @@
 pipeline {
     agent any
-    tools {
-        jdk 'JDK17'              // Name from Jenkins JDK config
-        maven 'Maven3.9.6'       // Name from Jenkins Maven config
-    }
+
+    // Select Environment at build time
     parameters {
         choice(name: 'ENV', choices: ['dev', 'qa', 'int'], description: 'Select Environment')
     }
-    environment {
-        CLIENT_ID     = credentials('restassured-client-id')
-        CLIENT_SECRET = credentials('restassured-client-secret')
+
+    // Tools declaration - avoids hardcoding paths
+    tools {
+        jdk 'jdk-17'         // Name from Manage Jenkins → Tools → JDK Installations
+        maven 'JDK24'  // Name from Manage Jenkins → Tools → Maven Installations
     }
+
+    environment {
+        // Default values to avoid null errors
+        CLIENT_ID     = ''
+        CLIENT_SECRET = ''
+    }
+
     stages {
+        stage('Set Environment Credentials') {
+            steps {
+                script {
+                    if (params.ENV == 'dev') {
+                        env.CLIENT_ID     = credentials('dev-client-id')
+                        env.CLIENT_SECRET = credentials('dev-client-id')
+                    } else if (params.ENV == 'int') {
+                        env.CLIENT_ID     = credentials('int-client-id')
+                        env.CLIENT_SECRET = credentials('int-client-id')
+                    } else if (params.ENV == 'qa') {
+                        env.CLIENT_ID     = credentials('qa-client-id')
+                        env.CLIENT_SECRET = credentials('qa-client-id')
+                    }
+                    else{
+						  env.CLIENT_ID     = credentials('dev-client-id')
+                        env.CLIENT_SECRET = credentials('dev-client-id')
+					}
+                }
+            }
+        }
+
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
+
         stage('Build & Test') {
             steps {
                 sh "mvn clean test -P${params.ENV}"
             }
         }
     }
+
     post {
         always {
             junit '**/target/surefire-reports/*.xml'
