@@ -1,2 +1,10 @@
-.env
-.properties
+.idea/
+target/
+*.iml
+*.log
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+src/test/resources/config/*.properties

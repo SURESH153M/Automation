@@ -1,0 +1,27 @@
+pipeline {
+    agent any
+    parameters {
+        choice(name: 'ENV', choices: ['dev', 'qa', 'int'], description: 'Select Environment')
+    }
+    environment {
+        CLIENT_ID     = credentials('restassured-client-id')
+        CLIENT_SECRET = credentials('restassured-client-secret')
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Build & Test') {
+            steps {
+                sh "mvn clean test -P${params.ENV}"
+            }
+        }
+    }
+    post {
+        always {
+            junit '**/target/surefire-reports/*.xml'
+        }
+    }
+}
